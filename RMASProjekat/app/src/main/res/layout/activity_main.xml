@@ -201,16 +201,6 @@
             app:layout_constraintTop_toBottomOf="@+id/tv_sensor" />
 
         <Button
-            android:id="@+id/btn_newWaypoint"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="New Waypoint"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tv_labelBreadCrumbCounter" />
-
-        <Button
             android:id="@+id/btn_showWaypointList"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -218,7 +208,7 @@
             android:text="Show Waypoint List"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/btn_newWaypoint" />
+            app:layout_constraintTop_toBottomOf="@+id/tv_countOfCrumbs" />
 
         <Button
             android:id="@+id/btn_showMap"
@@ -230,12 +220,16 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/btn_showWaypointList" />
 
+        <Button
+            android:id="@+id/logout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/log_out"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/btn_showMap" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <com.google.android.material.navigation.NavigationView
-        android:id="@+id/nav_view"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_gravity="start"
-        app:menu="@menu/nav_menu" />
 </androidx.drawerlayout.widget.DrawerLayout>

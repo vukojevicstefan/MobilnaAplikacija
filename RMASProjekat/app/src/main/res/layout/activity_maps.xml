@@ -15,7 +15,7 @@
         tools:context=".MapsActivity" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/AddMarker"
+        android:id="@+id/addMarker"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
@@ -27,4 +27,6 @@
         android:contentDescription="@string/add_a_new_marker"
         app:fabCustomSize="70dp"
         app:fabSize="normal" />
+
+
 </RelativeLayout>

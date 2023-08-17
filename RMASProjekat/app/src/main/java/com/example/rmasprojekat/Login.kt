@@ -33,11 +33,11 @@ class Login : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
         auth=FirebaseAuth.getInstance()
-        editTextEmail = findViewById<TextInputEditText>(R.id.email)
-        editTextPassword = findViewById<TextInputEditText>(R.id.password)
-        buttonLogin = findViewById<Button>(R.id.btn_login)
-        progressBar = findViewById<ProgressBar>(R.id.progressBar)
-        goToRegister=findViewById<TextView>(R.id.registerNow)
+        editTextEmail = findViewById(R.id.email)
+        editTextPassword = findViewById(R.id.password)
+        buttonLogin = findViewById(R.id.btn_login)
+        progressBar = findViewById(R.id.progressBar)
+        goToRegister=findViewById(R.id.registerNow)
 
         goToRegister.setOnClickListener(View.OnClickListener {
             val intent = Intent(this, Register::class.java)

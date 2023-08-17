@@ -15,4 +15,14 @@
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="add_a_new_marker">Add a new marker</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="username">Username</string>
+    <string name="back_to_log_in_page">Back to Log-In page.</string>
+    <string name="title_activity_location">LocationActivity</string>
+    <string name="location_address">Location Address:</string>
+    <string name="location_type">Location Type:</string>
+    <string name="latitude">Latitude:</string>
+    <string name="longitude">Longitude:</string>
+    <string name="average_rating">Average Rating:</string>
 </resources>

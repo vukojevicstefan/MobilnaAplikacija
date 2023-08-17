@@ -14,9 +14,13 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Material3.Light"
+        android:theme="@style/Theme.Material3.Dark"
         tools:targetApi="31">
-
+        <activity
+            android:name=".LocationActivity"
+            android:exported="false"
+            android:label="@string/title_activity_location"
+            android:theme="@style/Theme.Material3.Dark"/>
         <!--
              TODO: Before you run your application, you need a Google Maps API key.
 
@@ -42,11 +46,11 @@
         <activity
             android:name=".Register"
             android:exported="false"
-            android:theme="@style/Theme.Material3.Light.NoActionBar" />
+            android:theme="@style/Theme.Material3.Dark" />
         <activity
             android:name=".Login"
             android:exported="true"
-            android:theme="@style/Theme.Material3.Light.NoActionBar">
+            android:theme="@style/Theme.Material3.Dark">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -57,7 +61,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.Material3.Light.NoActionBar" />
+            android:theme="@style/Theme.Material3.Dark"/>
     </application>
 
 </manifest>

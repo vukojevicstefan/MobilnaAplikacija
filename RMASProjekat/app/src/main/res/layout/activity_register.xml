@@ -6,13 +6,14 @@
     android:layout_height="match_parent"
     android:gravity="top"
     android:orientation="vertical"
-    android:padding="100px"
-    tools:context=".Register">
+    android:padding="40dp"
+    tools:context=".Register"
+    >
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="100px"
+        android:layout_marginBottom="40dp"
         android:text="@string/sign_up"
         android:textAlignment="center"
         android:textSize="30sp"
@@ -21,7 +22,7 @@
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="50px">
+        android:layout_marginBottom="20dp">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/email"
@@ -31,11 +32,22 @@
             android:inputType="textEmailAddress"
             android:singleLine="true"/>
     </com.google.android.material.textfield.TextInputLayout>
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/username"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/username"
+            android:layout_marginBottom="20dp" />
+    </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="50px">
+        android:layout_marginBottom="20dp">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/password"
@@ -49,7 +61,7 @@
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="50px">
+        android:layout_marginBottom="20dp">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/first_name"
@@ -62,7 +74,7 @@
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="50px">
+        android:layout_marginBottom="20dp">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/last_name"
@@ -75,7 +87,7 @@
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="50px">
+        android:layout_marginBottom="20dp">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/phone_number"
@@ -96,15 +108,15 @@
         android:id="@+id/btn_register"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="200px"
+        android:layout_marginHorizontal="80dp"
         android:text="@string/sign_up" />
 
     <TextView
         android:id="@+id/loginNow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Back to Log-In page."
+        android:text="@string/back_to_log_in_page"
         android:textAlignment="center"
         android:textSize="16sp"
-        android:layout_marginTop="20px"/>
+        android:layout_marginTop="20dp"/>
 </LinearLayout>

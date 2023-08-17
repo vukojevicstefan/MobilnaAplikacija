@@ -14,11 +14,14 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 class Register : AppCompatActivity() {
-    private lateinit var editTextEmail: TextInputEditText
+
+    private lateinit var editTextUsername: TextInputEditText
     private lateinit var editTextPassword: TextInputEditText
     private lateinit var editTextFirstName: TextInputEditText
     private lateinit var editTextLastName: TextInputEditText
     private lateinit var editTextPhoneNumber: TextInputEditText
+    private lateinit var editTextEmail: TextInputEditText
+
     private lateinit var buttonReg: Button
     private lateinit var auth :FirebaseAuth
     private lateinit var progressBar :ProgressBar
@@ -38,11 +41,14 @@ class Register : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register)
         auth = FirebaseAuth.getInstance()
+
         editTextEmail = findViewById(R.id.email)
+        editTextUsername = findViewById(R.id.username)
         editTextPassword = findViewById(R.id.password)
         editTextFirstName = findViewById(R.id.first_name)
         editTextLastName = findViewById(R.id.last_name)
         editTextPhoneNumber = findViewById(R.id.phone_number)
+
         buttonReg = findViewById(R.id.btn_register)
         progressBar = findViewById(R.id.progressBar)
         goToLogIn = findViewById(R.id.loginNow)
@@ -55,15 +61,16 @@ class Register : AppCompatActivity() {
 
         buttonReg.setOnClickListener {
             progressBar.visibility = View.VISIBLE
-            val email = editTextEmail.text.toString()
+            val email=editTextEmail.text.toString()
+            val username = editTextUsername.text.toString()
             val password = editTextPassword.text.toString()
             val firstName = editTextFirstName.text.toString()
             val lastName = editTextLastName.text.toString()
             val phoneNumber = editTextPhoneNumber.text.toString()
 
-            if (TextUtils.isEmpty(email) || TextUtils.isEmpty(password) ||
-                TextUtils.isEmpty(firstName) || TextUtils.isEmpty(lastName) ||
-                TextUtils.isEmpty(phoneNumber)
+            if (TextUtils.isEmpty(username) || TextUtils.isEmpty(email)
+                || TextUtils.isEmpty(password) || TextUtils.isEmpty(firstName)
+                || TextUtils.isEmpty(lastName) || TextUtils.isEmpty(phoneNumber)
             ) {
                 Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
                 progressBar.visibility = View.GONE
@@ -87,11 +94,12 @@ class Register : AppCompatActivity() {
                             val userRef = db.collection("Users").document(uid)
 
                             val userDetails = hashMapOf(
-                                "Email" to email,
-                                "First Name" to firstName,
-                                "Last Name" to lastName,
-                                "Password" to password,
-                                "Phone Number" to phoneNumber
+                                "email" to email,
+                                "username" to username,
+                                "first name" to firstName,
+                                "last name" to lastName,
+                                "password" to password,
+                                "phone number" to phoneNumber
                             )
 
                             userRef.set(userDetails)

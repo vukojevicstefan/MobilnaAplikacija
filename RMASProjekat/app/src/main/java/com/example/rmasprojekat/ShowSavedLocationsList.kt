@@ -11,24 +11,24 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 class ShowSavedLocationsList : AppCompatActivity(), MarkerListCallback {
 
-    lateinit var lv_savedLocations: ListView
-    lateinit var savedMarkers: MutableList<LocationData>
+    private lateinit var lvSavedLocations: ListView
+    private lateinit var savedMarkers: MutableList<LocationData>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_show_saved_locations_list)
-        lv_savedLocations = findViewById(R.id.lv_WayPoints)
+        lvSavedLocations = findViewById(R.id.lv_WayPoints)
 
         readMarkersList(this)
     }
 
     private fun fillList() {
-        var markersList: MutableList<String> = mutableListOf()
+        val markersList: MutableList<String> = mutableListOf()
 
         for (location in savedMarkers) {
             markersList.add(location.name)
         }
-        lv_savedLocations.adapter = ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, markersList)
+        lvSavedLocations.adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, markersList)
     }
 
     private fun readMarkersList(callback: MarkerListCallback) {
@@ -43,7 +43,7 @@ class ShowSavedLocationsList : AppCompatActivity(), MarkerListCallback {
                 }
                 callback.onMarkersReady(markers)
             }
-            .addOnFailureListener { exception ->
+            .addOnFailureListener {
                 Toast.makeText(this, "Error getting data.", Toast.LENGTH_SHORT).show()
                 callback.onMarkersReady(markers) // Return the empty list in case of failure
             }
@@ -51,10 +51,6 @@ class ShowSavedLocationsList : AppCompatActivity(), MarkerListCallback {
 
     override fun onMarkersReady(markers: MutableList<LocationData>) {
         savedMarkers = markers
-
-        for (marker in savedMarkers) {
-            Toast.makeText(this, marker.address, Toast.LENGTH_SHORT).show()
-        }
 
         fillList()
     }

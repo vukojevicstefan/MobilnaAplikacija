@@ -3,24 +3,38 @@
 package com.example.rmasprojekat
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.Address
+import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
+import android.view.LayoutInflater
+import android.widget.ArrayAdapter
+import android.widget.Button
+import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.RatingBar
+import android.widget.Spinner
+import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.rmasprojekat.data.LocationData
 import com.example.rmasprojekat.data.MarkerListCallback
+import com.example.rmasprojekat.data.Review
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
-import com.google.android.gms.tasks.OnSuccessListener
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MarkerListCallback {
@@ -29,38 +43,101 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MarkerListCallback
     private lateinit var gMap: GoogleMap
     private lateinit var map: FrameLayout
     private lateinit var savedMarkers: MutableList<LocationData>
+    private lateinit var auth : FirebaseAuth
 
+    private lateinit var addMarker:FloatingActionButton
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
+
         map = findViewById(R.id.map)
         savedMarkers = mutableListOf()
+        addMarker=findViewById(R.id.addMarker)
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
+
         mapFragment.getMapAsync(this)
 
         readMarkersList(this)
+        addMarker.setOnClickListener {
+            newWaypoint()
+        }
+        auth=FirebaseAuth.getInstance()
     }
+    private fun newWaypoint() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                if (location != null) {
+                    val dialogView = LayoutInflater.from(this@MapsActivity)
+                        .inflate(R.layout.marker_dialog, null)
+                    val nameEditText = dialogView.findViewById<EditText>(R.id.marker_name_edittext)
+                    val typeSpinner = dialogView.findViewById<Spinner>(R.id.marker_type_spinner)
 
+                    val markerTypes = arrayOf("Restaurant", "Coffee Shop", "Fast Food", "Hotel", "Park", "Gas Station", "Other")
+                    val typeAdapter = ArrayAdapter(this@MapsActivity, R.layout.spinner_dropdown_item, markerTypes)
+                    typeAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+                    typeSpinner.adapter = typeAdapter
+
+                    AlertDialog.Builder(this@MapsActivity)
+                        .setTitle("Add Marker")
+                        .setView(dialogView)
+                        .setPositiveButton("Add") { _, _ ->
+                            val name = nameEditText.text.toString()
+                            val type = markerTypes[typeSpinner.selectedItemPosition]
+
+                            val address = getAddressFromLocation(location).toString()
+
+                            val markerDetails = LocationData(
+                                id="",
+                                name = name,
+                                latitude = location.latitude,
+                                longitude = location.longitude,
+                                address = address,
+                                type = type,
+                                photos = mutableListOf(),
+                                reviews = mutableListOf(),
+                                avgRating = 0,
+                                reviewCount = 0
+                            )
+
+                            val db = FirebaseFirestore.getInstance()
+                            val collectionRef = db.collection("Markers")
+                            collectionRef.add(markerDetails)
+
+                            readMarkersList(this@MapsActivity)
+                            Toast.makeText(
+                                this@MapsActivity,
+                                "Marker added.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                }
+            }
+        } else {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE)
+        }
+    }
     override fun onMapReady(googleMap: GoogleMap) {
         gMap = googleMap
         checkLocationPermission()
-        showsavedMarkersOnMap()
+        showSavedMarkersOnMap()
     }
 
     private fun showUserLocation() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             gMap.isMyLocationEnabled = true
             val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-            fusedLocationClient.lastLocation.addOnSuccessListener(this, object : OnSuccessListener<Location?> {
-                override fun onSuccess(location: Location?) {
-                    if (location != null) {
-                        val latitude = location.latitude
-                        val longitude = location.longitude
-                        val userLocation = LatLng(latitude, longitude)
-                        gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 16f))
-                    }
+            fusedLocationClient.lastLocation.addOnSuccessListener(this
+            ) { location ->
+                if (location != null) {
+                    val latitude = location.latitude
+                    val longitude = location.longitude
+                    val userLocation = LatLng(latitude, longitude)
+                    gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 16f))
                 }
-            })
+            }
         } else {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE)
         }
@@ -83,7 +160,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MarkerListCallback
         }
     }
 
-    private fun showsavedMarkersOnMap() {
+    private fun showSavedMarkersOnMap() {
         if (savedMarkers.isEmpty()) return
 
         val lastLocation = savedMarkers.last()
@@ -92,19 +169,26 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MarkerListCallback
         for (location in savedMarkers) {
             val latLng = LatLng(location.latitude, location.longitude)
             val markerTitle = location.name
-            gMap.addMarker(MarkerOptions().position(latLng).title(markerTitle))
+            val marker = gMap.addMarker(MarkerOptions().position(latLng).title(markerTitle))
+            if (marker != null) {
+                marker.tag = location
+            }
         }
 
         gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(lastLocationLatLng, 16f))
 
         gMap.setOnMarkerClickListener { marker ->
-            var clicks = marker.tag as? Int ?: 0
-            clicks++
-            marker.tag = clicks
-            Toast.makeText(this, "Marker was clicked $clicks times", Toast.LENGTH_SHORT).show()
-            false
+            val clickedLocation = marker.tag as? LocationData
+            if (clickedLocation != null) {
+                val intent = Intent(this, LocationActivity::class.java).apply {
+                    putExtra("clickedLocation", clickedLocation)
+                }
+                startActivity(intent)
+            }
+            true
         }
     }
+
     private fun readMarkersList(callback: MarkerListCallback) {
         val db = FirebaseFirestore.getInstance()
         val collectionRef = db.collection("Markers")
@@ -117,7 +201,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MarkerListCallback
                 }
                 callback.onMarkersReady(markers)
             }
-            .addOnFailureListener { exception ->
+            .addOnFailureListener {
                 Toast.makeText(this, "Error getting data.", Toast.LENGTH_SHORT).show()
                 callback.onMarkersReady(markers) // Return the empty list in case of failure
             }
@@ -125,6 +209,59 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MarkerListCallback
     override fun onMarkersReady(markers: MutableList<LocationData>) {
         savedMarkers = markers
         checkLocationPermission()
-        showsavedMarkersOnMap()
+        showSavedMarkersOnMap()
+    }
+    private fun getAddressFromLocation(location: Location): String? {
+        val geocoder = Geocoder(this)
+        val addresses: List<Address>? = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+        return addresses?.get(0)?.getAddressLine(0)
+    }
+
+    private fun findDocumentIdForLocation(clickedLocation: LocationData):String? {
+        val db = FirebaseFirestore.getInstance()
+        val collectionRef = db.collection("Markers")
+        var documentId:String? = null
+
+        val query = collectionRef.whereEqualTo("id", clickedLocation.id)
+        query.get()
+            .addOnSuccessListener { querySnapshot ->
+                for (documentSnapshot in querySnapshot.documents) {
+                    documentId = documentSnapshot.id
+                    break // Exit the loop after finding the first match
+                }
+            }
+            .addOnFailureListener {
+                Toast.makeText(this,"Error",Toast.LENGTH_SHORT).show()
+            }
+        return documentId
+    }
+
+
+
+    private fun updateLocationData(locationData: LocationData, documentId: String) {
+        if(documentId=="null")
+            return
+        val db = FirebaseFirestore.getInstance()
+        val collectionRef = db.collection("Markers")
+
+        // Update the Firestore document with the updated locationData
+        collectionRef.document(documentId)
+            .set(locationData)
+            .addOnSuccessListener {
+                // Update successful
+            }
+            .addOnFailureListener {
+                // Update failed
+            }
+    }
+
+
+    private fun findLocationDataForMarker(marker: Marker):LocationData?{
+        for(location in savedMarkers){
+            if(LatLng(location.latitude,location.longitude)==marker.position){
+                return location
+            }
+        }
+        return null
     }
 }

@@ -1,24 +1,22 @@
-@file:Suppress("DEPRECATION")
+@file:Suppress("DEPRECATION","UseSwitchCompatOrMaterialCode")
 
 package com.example.rmasprojekat
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Address
 import android.location.Geocoder
 import android.location.Location
-import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.drawerlayout.widget.DrawerLayout
 import com.example.rmasprojekat.data.LocationData
 import com.example.rmasprojekat.data.MarkerListCallback
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -27,41 +25,40 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
-import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
 
 class MainActivity : AppCompatActivity(), MarkerListCallback  {
-    lateinit var auth: FirebaseAuth
-    lateinit var user:FirebaseUser
+    private lateinit var auth: FirebaseAuth
+    private lateinit var user:FirebaseUser
 
-    lateinit var tv_lat:TextView
-    lateinit var tv_lon:TextView
-    lateinit var tv_altitude:TextView
-    lateinit var tv_accuracy:TextView
-    lateinit var tv_speed:TextView
-    lateinit var tv_sensor:TextView
-    lateinit var tv_updates:TextView
-    lateinit var tv_address:TextView
-    lateinit var tv_waypointCount:TextView
+    private lateinit var tv_lat:TextView
+    private lateinit var tv_lon:TextView
+    private lateinit var tv_altitude:TextView
+    private lateinit var tv_accuracy:TextView
+    private lateinit var tv_speed:TextView
+    private lateinit var tv_sensor:TextView
+    private lateinit var tv_updates:TextView
+    private lateinit var tv_address:TextView
+    private lateinit var tv_waypointCount:TextView
 
-    lateinit var sw_locationupdates:Switch
-    lateinit var sw_gps:Switch
+    private lateinit var sw_locationupdates: Switch
+    private lateinit var sw_gps:Switch
 
-    lateinit var btn_newWaypoint:Button
-    lateinit var btn_showWaypointList:Button
-    lateinit var btn_showMap:Button
+    private lateinit var btn_showWaypointList:Button
+    private lateinit var btn_showMap:Button
+    private lateinit var btn_logout:Button
 
-    lateinit var fusedLocationProviderClient:FusedLocationProviderClient
-    lateinit var locationRequest:LocationRequest
+    private lateinit var fusedLocationProviderClient:FusedLocationProviderClient
+    private lateinit var locationRequest:LocationRequest
 
-    val DEFAULT_UPDATE_INTERVAL:Long=30000
-    val FAST_UPDATE_INTERVAL:Long=5000
-    val PERMISSIONS_FINE_LOCATION=99
+    private val DEFAULT_UPDATE_INTERVAL:Long=30000
+    private val FAST_UPDATE_INTERVAL:Long=5000
+    private val PERMISSIONS_FINE_LOCATION=99
 
-    lateinit var currentLoc:Location
-    lateinit var savedMarkers:MutableList<LocationData>
+    private lateinit var currentLoc:Location
+    private lateinit var savedMarkers:MutableList<LocationData>
     private lateinit var locationCallback: LocationCallback
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,36 +67,6 @@ class MainActivity : AppCompatActivity(), MarkerListCallback  {
         auth=FirebaseAuth.getInstance()
         user=auth.currentUser!!
         savedMarkers= mutableListOf()
-        val drawerLayout = findViewById<DrawerLayout>(R.id.drawer_layout)
-        val toggle = ActionBarDrawerToggle(
-            this,
-            drawerLayout,
-            R.string.navigation_drawer_open,
-            R.string.navigation_drawer_close
-        )
-        drawerLayout.addDrawerListener(toggle)
-        toggle.syncState()
-        val navView = findViewById<NavigationView>(R.id.nav_view)
-        navView.setNavigationItemSelectedListener { menuItem ->
-            when (menuItem.itemId) {
-                R.id.nav_item1 -> {
-                    // Handle item 1 click
-                    drawerLayout.closeDrawers()
-                    true
-                }
-                R.id.logout -> {
-                    // Handle logout click
-                    auth.signOut()
-                    val intent = Intent(this, Login::class.java)
-                    startActivity(intent)
-                    drawerLayout.closeDrawers()
-                    true
-                }
-                // Handle more items as needed
-                else -> false
-            }
-
-        }
 
         if(user==null){
             val intent = Intent(this, Login::class.java)
@@ -120,9 +87,9 @@ class MainActivity : AppCompatActivity(), MarkerListCallback  {
         sw_locationupdates = findViewById(R.id.sw_locationsupdates)
         sw_gps = findViewById(R.id.sw_gps)
 
-        btn_newWaypoint=findViewById(R.id.btn_newWaypoint)
         btn_showWaypointList=findViewById(R.id.btn_showWaypointList)
         btn_showMap=findViewById(R.id.btn_showMap)
+        btn_logout=findViewById(R.id.logout)
 
         locationRequest = LocationRequest.create().apply {
             interval = DEFAULT_UPDATE_INTERVAL // Specify the update interval in milliseconds
@@ -132,26 +99,27 @@ class MainActivity : AppCompatActivity(), MarkerListCallback  {
 
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
-                locationResult ?: return
                 for (location in locationResult.locations){
-                    // Update UI with location data
                     updateUIValues(location)
                 }
             }
         }
-        btn_newWaypoint.setOnClickListener(View.OnClickListener {
-            NewWaypoint()
-        })
-        btn_showWaypointList.setOnClickListener(View.OnClickListener {
+        btn_showWaypointList.setOnClickListener {
             val intent = Intent(this, ShowSavedLocationsList::class.java)
             startActivity(intent)
             finish()
-        })
-        btn_showMap.setOnClickListener(View.OnClickListener {
+        }
+        btn_showMap.setOnClickListener {
             val intent = Intent(this, MapsActivity::class.java)
             startActivity(intent)
             finish()
-        })
+        }
+        btn_logout.setOnClickListener {
+            auth.signOut()
+            val intent = Intent(this, Login::class.java)
+            startActivity(intent)
+            finish()
+        }
         sw_gps.setOnClickListener( View.OnClickListener {
             if(sw_gps.isChecked){
                 locationRequest.priority=Priority.PRIORITY_HIGH_ACCURACY
@@ -162,33 +130,17 @@ class MainActivity : AppCompatActivity(), MarkerListCallback  {
             }
         })
 
-        sw_locationupdates.setOnClickListener(View.OnClickListener {
-            if(sw_locationupdates.isChecked){
+        sw_locationupdates.setOnClickListener {
+            if (sw_locationupdates.isChecked) {
                 startLocationUpdates()
-            }else{
+            } else {
                 stopLocationUpdates()
             }
-        })
-
-        readMarkersList(this)
+        }
         updateGps()
+        readMarkersList(this)
 
     }//end of onCreate method
-    private fun NewWaypoint(){
-        readMarkersList(this)
-        val db = FirebaseFirestore.getInstance()
-        val collectionRef = db.collection("Markers")
-        val markerDetails = LocationData(
-            name = "Example",
-            latitude = currentLoc.latitude,
-            longitude = currentLoc.longitude,
-            address = getAddressFromLocation(currentLoc).toString(),
-            type = "Example"
-        )
-        collectionRef.add(markerDetails)
-        updateUIValues(currentLoc)
-        Toast.makeText(this, "Marker added.", Toast.LENGTH_SHORT).show()
-    }
     private fun stopLocationUpdates() {
         tv_updates.setText("Location is NOT being tracked")
         tv_lat.text="Not tracking location"
@@ -239,15 +191,13 @@ class MainActivity : AppCompatActivity(), MarkerListCallback  {
     private fun updateGps(){
         readMarkersList(this)
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
-        if(ActivityCompat.checkSelfPermission(this,android.Manifest.permission.ACCESS_FINE_LOCATION)==PackageManager.PERMISSION_GRANTED){
+        if(ActivityCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION)==PackageManager.PERMISSION_GRANTED){
             fusedLocationProviderClient.getLastLocation().addOnSuccessListener {
                 updateUIValues(it)
                 currentLoc=it
             }
         }else{
-            if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.M){
-                requestPermissions(arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION), PERMISSIONS_FINE_LOCATION)
-            }
+            requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), PERMISSIONS_FINE_LOCATION)
         }
     }
 
@@ -265,7 +215,7 @@ class MainActivity : AppCompatActivity(), MarkerListCallback  {
         }else{
             tv_speed.text="Not Available."
         }
-        val geocoder: Geocoder=Geocoder(this)
+        val geocoder = Geocoder(this)
         try{
             val addresses:List<Address>? = geocoder.getFromLocation(location.latitude,location.longitude,1)
             if (addresses != null) {
