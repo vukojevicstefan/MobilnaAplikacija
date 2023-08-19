@@ -36,6 +36,7 @@ import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MarkerListCallback {
 
@@ -96,13 +97,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MarkerListCallback
                                 type = type,
                                 photos = mutableListOf(),
                                 reviews = mutableListOf(),
-                                avgRating = 0,
+                                avgRating = 0.0,
                                 reviewCount = 0
                             )
 
                             val db = FirebaseFirestore.getInstance()
                             val collectionRef = db.collection("Markers")
-                            collectionRef.add(markerDetails)
+                            // Add the marker details to Firestore and get the generated document reference
+                            collectionRef.add(markerDetails).addOnSuccessListener {
+                                val data = hashMapOf("id" to it.id)
+
+                                db.collection("Markers").document(it.id)
+                                    .set(data, SetOptions.merge())
+                            }
+
 
                             readMarkersList(this@MapsActivity)
                             Toast.makeText(
@@ -135,7 +143,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MarkerListCallback
                     val latitude = location.latitude
                     val longitude = location.longitude
                     val userLocation = LatLng(latitude, longitude)
-                    gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 16f))
+                    gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 18f))
                 }
             }
         } else {
@@ -175,7 +183,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MarkerListCallback
             }
         }
 
-        gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(lastLocationLatLng, 16f))
 
         gMap.setOnMarkerClickListener { marker ->
             val clickedLocation = marker.tag as? LocationData
@@ -215,53 +222,5 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MarkerListCallback
         val geocoder = Geocoder(this)
         val addresses: List<Address>? = geocoder.getFromLocation(location.latitude, location.longitude, 1)
         return addresses?.get(0)?.getAddressLine(0)
-    }
-
-    private fun findDocumentIdForLocation(clickedLocation: LocationData):String? {
-        val db = FirebaseFirestore.getInstance()
-        val collectionRef = db.collection("Markers")
-        var documentId:String? = null
-
-        val query = collectionRef.whereEqualTo("id", clickedLocation.id)
-        query.get()
-            .addOnSuccessListener { querySnapshot ->
-                for (documentSnapshot in querySnapshot.documents) {
-                    documentId = documentSnapshot.id
-                    break // Exit the loop after finding the first match
-                }
-            }
-            .addOnFailureListener {
-                Toast.makeText(this,"Error",Toast.LENGTH_SHORT).show()
-            }
-        return documentId
-    }
-
-
-
-    private fun updateLocationData(locationData: LocationData, documentId: String) {
-        if(documentId=="null")
-            return
-        val db = FirebaseFirestore.getInstance()
-        val collectionRef = db.collection("Markers")
-
-        // Update the Firestore document with the updated locationData
-        collectionRef.document(documentId)
-            .set(locationData)
-            .addOnSuccessListener {
-                // Update successful
-            }
-            .addOnFailureListener {
-                // Update failed
-            }
-    }
-
-
-    private fun findLocationDataForMarker(marker: Marker):LocationData?{
-        for(location in savedMarkers){
-            if(LatLng(location.latitude,location.longitude)==marker.position){
-                return location
-            }
-        }
-        return null
     }
 }

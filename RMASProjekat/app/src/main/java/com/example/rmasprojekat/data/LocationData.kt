@@ -9,10 +9,10 @@ data class LocationData(
     val address: String,
     val longitude: Double,
     val latitude: Double,
-    val reviews: MutableList<Review>,
-    val avgRating: Int,
-    val reviewCount: Int,
+    var reviews: MutableList<Review>,
+    var avgRating: Double,
+    var reviewCount: Int,
     val photos: MutableList<String>
 ) : Serializable {
-    constructor() : this("", "", "", "", 0.0, 0.0, mutableListOf(), 0, 0, mutableListOf())
+    constructor() : this("", "", "", "", 0.0, 0.0, mutableListOf(), 0.0, 0, mutableListOf())
 }
