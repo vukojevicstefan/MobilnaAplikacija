@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "360161187752",
+    "project_id": "rmas-projekat-44725",
+    "storage_bucket": "rmas-projekat-44725.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:360161187752:android:b6e142c2c08659c77eef9d",
+        "android_client_info": {
+          "package_name": "com.example.rmasprojekat"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "360161187752-32heuq2mf2qakbhrsob8t52ftj3ficuf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCSSLUI0IiyibctYUOAq3VrDVMC9ODkIkc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "360161187752-32heuq2mf2qakbhrsob8t52ftj3ficuf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
