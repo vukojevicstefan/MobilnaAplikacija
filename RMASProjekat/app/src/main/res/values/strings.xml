@@ -30,4 +30,14 @@
     <string name="like">Like</string>
     <string name="unlike">Unlike</string>
     <string name="likes">likes</string>
+    <string name="map">Map</string>
+    <string name="profile">Profile</string>
+    <string name="list">List</string>
+    <string name="author_name">Author Name</string>
+    <string name="date_of_creation">Date of creation: All Time</string>
+    <string name="change">Change</string>
+    <string name="leaderboard">Leaderboard</string>
+    <string name="set_date_range">Set Date Range</string>
+    <string name="radius_in_km">Radius in km:</string>
+    <string name="radius_0km">Radius: 0km</string>
 </resources>

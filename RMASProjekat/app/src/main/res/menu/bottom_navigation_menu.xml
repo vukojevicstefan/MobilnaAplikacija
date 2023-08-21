@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/navMapsActivity"
+        android:icon="@drawable/baseline_map_24"
+        android:title="@string/map" />
+    <item
+        android:id="@+id/navMarkersList"
+        android:icon="@drawable/baseline_list_24"
+        android:title="@string/list" />
+    <item
+        android:id="@+id/navLeaderboard"
+        android:icon="@drawable/baseline_leaderboard_24"
+        android:title="@string/leaderboard" />
+</menu>

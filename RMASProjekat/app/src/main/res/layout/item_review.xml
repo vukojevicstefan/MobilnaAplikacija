@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/review"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -69,12 +70,10 @@
             app:layout_constraintStart_toEndOf="@+id/btnLike"
             app:layout_constraintTop_toTopOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
-
     <View
         android:layout_width="match_parent"
         android:layout_height="2dp"
         android:background="#404040"
         android:layout_marginTop="16dp" />
-    <!-- You can add more views like buttons for likes/dislikes here if needed -->
 
 </LinearLayout>

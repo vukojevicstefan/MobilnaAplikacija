@@ -17,38 +17,20 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Material3.Dark"
         tools:targetApi="31">
-        <activity
-            android:name=".LocationActivity"
-            android:exported="false"
-            android:theme="@style/Theme.Material3.Dark"/>
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyCSSLUI0IiyibctYUOAq3VrDVMC9ODkIkc" />
-
         <activity
-            android:name=".MapsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ShowSavedLocationsList"
-            android:exported="false" />
-        <activity
-            android:name=".Register"
-            android:exported="false"
-            android:theme="@style/Theme.Material3.Dark" />
-        <activity
-            android:name=".Login"
-            android:exported="true"
-            android:theme="@style/Theme.Material3.Dark">
+            android:name=".MainActivity"
+            android:theme="@style/Theme.Material3.Dark"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
-            android:name=".MainActivity"
-            android:exported="true"
-            android:theme="@style/Theme.Material3.Dark"/>
+            android:name=".fragments.LoginFragment"/>
     </application>
 
 </manifest>
