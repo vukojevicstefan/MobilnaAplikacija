@@ -38,6 +38,7 @@
     <string name="change">Change</string>
     <string name="leaderboard">Leaderboard</string>
     <string name="set_date_range">Set Date Range</string>
-    <string name="radius_in_km">Radius in km:</string>
-    <string name="radius_0km">Radius: 0km</string>
+    <string name="radius_1km">Radius: 1km</string>
+    <string name="take_a_photo">Take a photo</string>
+    <string name="open_gallery">Open Gallery</string>
 </resources>

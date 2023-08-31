@@ -10,10 +10,11 @@ data class User(
     var lastName: String,
     var phoneNumber: String,
     var score: Int,
-    var likedReviews: MutableList<String> = mutableListOf()
+    var likedReviews: MutableList<String> = mutableListOf(),
+    var photoPath: String
 ) : Serializable {
 
-    constructor() : this("","", "", "", "", "",0, mutableListOf()) {
+    constructor() : this("","", "", "", "", "",0, mutableListOf(), "") {
 
     }
 }

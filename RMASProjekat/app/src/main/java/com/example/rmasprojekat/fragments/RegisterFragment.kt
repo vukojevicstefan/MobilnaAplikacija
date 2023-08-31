@@ -1,6 +1,5 @@
 package com.example.rmasprojekat.fragments
 
-import android.content.Intent
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.Log
@@ -12,9 +11,11 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.navigation.findNavController
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.setFragmentResultListener
 import androidx.navigation.fragment.findNavController
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.RequestOptions
 import com.example.rmasprojekat.R
 import com.example.rmasprojekat.databinding.FragmentRegisterBinding
 import com.google.android.material.textfield.TextInputEditText
@@ -36,7 +37,19 @@ class RegisterFragment : Fragment() {
     private lateinit var progressBar: ProgressBar
     private lateinit var goToLogIn: TextView
     private lateinit var binding: FragmentRegisterBinding
+    private var imageUri: String? = null
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        setFragmentResultListener(CameraFragment.REQUEST_PHOTO) { _, bundle ->
+            val result = bundle.getString(CameraFragment.PHOTO_URI)
+            Glide.with(requireContext()).load(result).apply(
+                RequestOptions.circleCropTransform()
+            ).into(binding.addAPhoto)
+            imageUri = result
+        }
+    }
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -67,6 +80,9 @@ class RegisterFragment : Fragment() {
             findNavController().navigate(R.id.action_registerFragment_to_loginFragment)
         }
 
+        binding.addAPhoto.setOnClickListener {
+            findNavController().navigate(R.id.action_registerFragment_to_cameraFragment)
+        }
 
         buttonReg.setOnClickListener {
             progressBar.visibility = View.VISIBLE
@@ -77,6 +93,7 @@ class RegisterFragment : Fragment() {
             val firstName = editTextFirstName.text.toString()
             val lastName = editTextLastName.text.toString()
             val phoneNumber = editTextPhoneNumber.text.toString()
+            val imageUri = imageUri
             if (TextUtils.isEmpty(username) || TextUtils.isEmpty(email)
                 || TextUtils.isEmpty(password) || TextUtils.isEmpty(firstName)
                 || TextUtils.isEmpty(lastName) || TextUtils.isEmpty(phoneNumber)
@@ -98,8 +115,22 @@ class RegisterFragment : Fragment() {
                         Toast.makeText(requireContext(), "Passwords must match.", Toast.LENGTH_SHORT).show()
                         progressBar.visibility = View.GONE
                         return@isUsernameTaken
+                    }else if(imageUri == null){
+                        Toast.makeText(requireContext(), "Please add a photo.", Toast.LENGTH_SHORT).show()
+                        progressBar.visibility = View.GONE
+                        return@isUsernameTaken
                     }
                     else {
+                        binding.email.visibility = View.VISIBLE
+                        binding.username.visibility = View.GONE
+                        binding.password.visibility = View.GONE
+                        binding.confirmPassword.visibility = View.GONE
+                        binding.firstName.visibility = View.GONE
+                        binding.lastName.visibility = View.GONE
+                        binding.phoneNumber.visibility = View.GONE
+                        binding.addAPhoto.visibility = View.GONE
+                        binding.btnRegister.visibility = View.GONE
+
                         auth.createUserWithEmailAndPassword(email, password)
                             .addOnCompleteListener { task ->
                                 progressBar.visibility = View.GONE
@@ -107,7 +138,6 @@ class RegisterFragment : Fragment() {
                                     val user = auth.currentUser
                                     val uid = user?.uid ?: ""
 
-                                    // Update user profile with display name
                                     val profileUpdates = UserProfileChangeRequest.Builder()
                                         .setDisplayName(username)
                                         .build()
@@ -128,7 +158,8 @@ class RegisterFragment : Fragment() {
                                                     "password" to password,
                                                     "phone number" to phoneNumber,
                                                     "score" to 0,
-                                                    "likedReviews" to mutableListOf<String>()
+                                                    "likedReviews" to mutableListOf<String>(),
+                                                    "photoPath" to imageUri
                                                 )
 
                                                 userRef.set(userDetails)

@@ -27,7 +27,7 @@
         android:id="@+id/selected_radius_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/radius_0km"
+        android:text="@string/radius_1km"
         android:textSize="15sp"
         android:layout_marginStart="12dp"/>
 

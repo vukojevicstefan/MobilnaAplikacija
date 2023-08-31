@@ -5,7 +5,8 @@
     android:layout_height="match_parent"
     xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
-    android:padding="16dp"
+    android:padding="10dp"
+    android:paddingBottom="50dp"
     tools:context=".fragments.LocationFragment">
 
     <androidx.recyclerview.widget.RecyclerView
@@ -64,38 +65,29 @@
         android:layout_gravity="center"
         android:layout_marginBottom="6dp"/>
 
-    <TextView
-        android:id="@+id/tvLatLng"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/lat_lng"
-        android:textSize="12sp"
-        android:gravity="center"
-        android:layout_gravity="center"
-        android:layout_marginBottom="6dp"/>
-
-
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <Button
+        <ImageView
             android:id="@+id/btnAddReview"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:layout_gravity="center"
             android:text="@string/add_review"
+            android:src="@drawable/baseline_rate_review_24"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/btnAddPhoto"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <Button
+        <ImageView
             android:id="@+id/btnAddPhoto"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:layout_gravity="center"
             android:text="@string/add_photo"
+            android:src="@drawable/baseline_collections_24"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/btnAddReview"

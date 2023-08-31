@@ -6,16 +6,15 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:gravity="center"
-    android:padding="8dp">
+    android:gravity="center">
 
     <TextView
         android:id="@+id/tvUsername"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textStyle="bold"
-        android:textSize="16sp"
-        android:layout_marginBottom="4dp"/>
+        android:textSize="14sp"
+        android:layout_marginBottom="2dp"/>
 
     <RatingBar
         android:id="@+id/ratingBarReview"
@@ -23,8 +22,7 @@
         android:layout_height="wrap_content"
         android:numStars="5"
         android:stepSize="1.0"
-        android:isIndicator="true"
-        android:layout_marginBottom="4dp"/>
+        android:isIndicator="true"/>
 
     <TextView
         android:id="@+id/tvComment"
@@ -37,8 +35,8 @@
 
         <ImageButton
             android:id="@+id/btnLike"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:contentDescription="@string/like"
             android:src="@drawable/favorite_40px"
             android:background="@android:color/transparent"
@@ -50,8 +48,8 @@
 
         <ImageButton
             android:id="@+id/btnUnlike"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:contentDescription="@string/unlike"
             android:src="@drawable/favorite_filled_40px"
             android:background="@android:color/transparent"
@@ -74,6 +72,6 @@
         android:layout_width="match_parent"
         android:layout_height="2dp"
         android:background="#404040"
-        android:layout_marginTop="16dp" />
+        android:layout_marginTop="12dp" />
 
 </LinearLayout>

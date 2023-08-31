@@ -1,6 +1,7 @@
 package com.example.rmasprojekat.adapters
 
 import android.annotation.SuppressLint
+import android.text.TextUtils.isEmpty
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -40,6 +41,8 @@ class ReviewsAdapter(private val reviews: MutableList<Review>) :
         holder.tvUserName.text = "By " + currentReview.user
         holder.ratingBarReview.rating = currentReview.rating.toFloat()
         holder.tvComment.text = currentReview.text
+        if(isEmpty(currentReview.text))
+            holder.tvComment.visibility=View.GONE
 
 
         val btnLike: ImageButton = holder.itemView.findViewById(R.id.btnLike)

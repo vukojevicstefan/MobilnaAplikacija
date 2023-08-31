@@ -12,6 +12,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.RatingBar
 import android.widget.TextView
 import android.widget.Toast
@@ -38,10 +39,9 @@ class LocationFragment : Fragment() {
     private lateinit var tvLocationName: TextView
     private lateinit var tvLocationType: TextView
     private lateinit var tvLocationAddress: TextView
-    private lateinit var tvLatLng: TextView
     private lateinit var tvAvgRating: TextView
-    private lateinit var btnAddReview: Button
-    private lateinit var btnAddPhoto: Button
+    private lateinit var btnAddReview: ImageView
+    private lateinit var btnAddPhoto: ImageView
     private lateinit var recyclerView: RecyclerView
     private lateinit var LOC: LocationData
     private val PICK_IMAGE_REQUEST = 1
@@ -62,12 +62,10 @@ class LocationFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-
         // Initialize views
         tvLocationName = view.findViewById(R.id.tvLocationName)
         tvLocationType = view.findViewById(R.id.tvLocationType)
         tvLocationAddress = view.findViewById(R.id.tvLocationAddress)
-        tvLatLng = view.findViewById(R.id.tvLatLng)
         tvAvgRating = view.findViewById(R.id.tvAvgRating)
         btnAddReview = view.findViewById(R.id.btnAddReview)
         btnAddPhoto = view.findViewById(R.id.btnAddPhoto)
@@ -100,7 +98,6 @@ class LocationFragment : Fragment() {
         tvLocationName.text = location.name
         tvLocationType.text = location.type
         tvLocationAddress.text = location.address
-        tvLatLng.text = "${location.latitude}, ${location.longitude}"
         tvAvgRating.text = "Rating ${location.avgRating}"
         (requireActivity() as AppCompatActivity).supportActionBar?.title = location.name
 
@@ -141,8 +138,8 @@ class LocationFragment : Fragment() {
         }
     }
     private fun addReview(clickedLocation: LocationData) {
-//        checkIfUserAlreadyHasReview(clickedLocation.reviews.toList()){hasReview->
-//          if(!hasReview) {
+        checkIfUserAlreadyHasReview(clickedLocation.reviews.toList()){hasReview->
+          if(!hasReview) {
           val db = Firebase.firestore
           val inflater = layoutInflater
           val dialogView = inflater.inflate(R.layout.layout_marker_details, null)
@@ -166,6 +163,7 @@ class LocationFragment : Fragment() {
 
           // Handle the submit button click
           btnSubmit.setOnClickListener {
+              btnSubmit.visibility=View.GONE
               returnUserName { username ->
                   var newReview = Review(
                       id = "",
@@ -217,10 +215,10 @@ class LocationFragment : Fragment() {
                       }
               }
           }
-//          }else{
-//              Toast.makeText(requireContext(),"You already uploaded a review!",Toast.LENGTH_SHORT)
-//          }
-//        }
+          }else{
+              Toast.makeText(requireContext(),"You already uploaded a review!",Toast.LENGTH_SHORT).show()
+          }
+        }
     }
     private fun updateMarkerRating(location:LocationData, newRating:Int){
         location.reviewCount++
@@ -276,19 +274,19 @@ class LocationFragment : Fragment() {
                 }
             }
     }
-//    private fun checkIfUserAlreadyHasReview(reviews: List<Review>, callback: (Boolean) -> Unit) :Boolean{
-//        returnUserName { username ->
-//            for (review in reviews) {
-//                if (review.user == username) {
-//                    // User already has a review
-//                    callback(true)
-//                    return@returnUserName
-//                }
-//            }
-//            callback(false)
-//        }
-//        return false
-//    }
+    private fun checkIfUserAlreadyHasReview(reviews: List<Review>, callback: (Boolean) -> Unit) :Boolean{
+        returnUserName { username ->
+            for (review in reviews) {
+                if (review.user == username) {
+                    // User already has a review
+                    callback(true)
+                    return@returnUserName
+                }
+            }
+            callback(false)
+        }
+        return false
+    }
     private fun displayImages(imageUrls: List<String>) {
         imagesRecyclerView.layoutManager =
             LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
