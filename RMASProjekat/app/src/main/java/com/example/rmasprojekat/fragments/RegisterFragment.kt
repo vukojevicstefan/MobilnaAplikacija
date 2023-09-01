@@ -2,7 +2,6 @@ package com.example.rmasprojekat.fragments
 
 import android.os.Bundle
 import android.text.TextUtils
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,12 +15,12 @@ import androidx.fragment.app.setFragmentResultListener
 import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
+import com.example.rmasprojekat.MainActivity
 import com.example.rmasprojekat.R
 import com.example.rmasprojekat.databinding.FragmentRegisterBinding
+import com.example.rmasprojekat.viewmodels.RegisterViewModel
 import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.UserProfileChangeRequest
-import com.google.firebase.firestore.FirebaseFirestore
 
 class RegisterFragment : Fragment() {
 
@@ -38,6 +37,7 @@ class RegisterFragment : Fragment() {
     private lateinit var goToLogIn: TextView
     private lateinit var binding: FragmentRegisterBinding
     private var imageUri: String? = null
+    private lateinit var viewModel: RegisterViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,10 +57,11 @@ class RegisterFragment : Fragment() {
         binding = FragmentRegisterBinding.inflate(inflater, container, false)
         return binding.root
     }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        val activity = requireActivity() as MainActivity
+        viewModel = RegisterViewModel(activity.userViewModel)
         (requireActivity() as AppCompatActivity).supportActionBar?.title = "Register"
         auth = FirebaseAuth.getInstance()
 
@@ -85,6 +86,7 @@ class RegisterFragment : Fragment() {
         }
 
         buttonReg.setOnClickListener {
+            setVisibility(View.GONE)
             progressBar.visibility = View.VISIBLE
             val email = editTextEmail.text.toString()
             val username = editTextUsername.text.toString()
@@ -102,108 +104,52 @@ class RegisterFragment : Fragment() {
                 progressBar.visibility = View.GONE
                 return@setOnClickListener
             } else {
-                isUsernameTaken(username) { uTaken ->
+                viewModel.isUsernameTaken(username) { uTaken ->
                     if (uTaken) {
-                        Toast.makeText(requireContext(), "Username is taken.", Toast.LENGTH_SHORT).show()
+                        setVisibility(View.VISIBLE)
                         progressBar.visibility = View.GONE
+                        Toast.makeText(requireContext(), "Username is taken.", Toast.LENGTH_SHORT).show()
                         return@isUsernameTaken
                     } else if (password.length < 6) {
-                        Toast.makeText(requireContext(), "Password must be at least 6 characters long.", Toast.LENGTH_SHORT).show()
+                        setVisibility(View.VISIBLE)
                         progressBar.visibility = View.GONE
+                        Toast.makeText(requireContext(), "Password must be at least 6 characters long.", Toast.LENGTH_SHORT).show()
                         return@isUsernameTaken
                     } else if(password!=secondPassword){
-                        Toast.makeText(requireContext(), "Passwords must match.", Toast.LENGTH_SHORT).show()
+                        setVisibility(View.VISIBLE)
                         progressBar.visibility = View.GONE
+                        Toast.makeText(requireContext(), "Passwords must match.", Toast.LENGTH_SHORT).show()
                         return@isUsernameTaken
                     }else if(imageUri == null){
-                        Toast.makeText(requireContext(), "Please add a photo.", Toast.LENGTH_SHORT).show()
+                        setVisibility(View.VISIBLE)
                         progressBar.visibility = View.GONE
+                        Toast.makeText(requireContext(), "Please add a photo.", Toast.LENGTH_SHORT).show()
                         return@isUsernameTaken
                     }
                     else {
-                        binding.email.visibility = View.VISIBLE
-                        binding.username.visibility = View.GONE
-                        binding.password.visibility = View.GONE
-                        binding.confirmPassword.visibility = View.GONE
-                        binding.firstName.visibility = View.GONE
-                        binding.lastName.visibility = View.GONE
-                        binding.phoneNumber.visibility = View.GONE
-                        binding.addAPhoto.visibility = View.GONE
-                        binding.btnRegister.visibility = View.GONE
-
-                        auth.createUserWithEmailAndPassword(email, password)
-                            .addOnCompleteListener { task ->
+                        viewModel.createUserWithEmailAndPassword(email,password,username,firstName,lastName,phoneNumber,imageUri){ success ->
+                            if (success) {
+                                findNavController().navigate(R.id.mapFragment)
+                            } else {
                                 progressBar.visibility = View.GONE
-                                if (task.isSuccessful) {
-                                    val user = auth.currentUser
-                                    val uid = user?.uid ?: ""
-
-                                    val profileUpdates = UserProfileChangeRequest.Builder()
-                                        .setDisplayName(username)
-                                        .build()
-
-                                    user?.updateProfile(profileUpdates)
-                                        ?.addOnCompleteListener { profileUpdateTask ->
-                                            if (profileUpdateTask.isSuccessful) {
-                                                // Registration successful and profile updated
-                                                val db = FirebaseFirestore.getInstance()
-                                                val userRef = db.collection("Users").document(uid)
-
-                                                val userDetails = hashMapOf(
-                                                    "id" to uid,
-                                                    "email" to email,
-                                                    "username" to username,
-                                                    "first name" to firstName,
-                                                    "last name" to lastName,
-                                                    "password" to password,
-                                                    "phone number" to phoneNumber,
-                                                    "score" to 0,
-                                                    "likedReviews" to mutableListOf<String>(),
-                                                    "photoPath" to imageUri
-                                                )
-
-                                                userRef.set(userDetails)
-                                                    .addOnSuccessListener {
-                                                        // Additional user details saved successfully
-                                                        Toast.makeText(requireContext(), "Registration successful.", Toast.LENGTH_SHORT).show()
-                                                        findNavController().navigate(R.id.action_registerFragment_to_mapFragment)
-                                                    }
-                                                    .addOnFailureListener {
-                                                        // Error saving additional user details
-                                                        Toast.makeText(requireContext(), "Error saving user details.", Toast.LENGTH_SHORT).show()
-                                                    }
-                                            } else {
-                                                val exception = task.exception
-                                                if (exception != null) {
-                                                    Log.e("Profile Update Error", exception.toString())
-                                                }
-                                                Toast.makeText(requireContext(), "Profile update failed.", Toast.LENGTH_SHORT).show()
-                                            }
-                                        }
-                                } else {
-                                    val exception = task.exception
-                                    if (exception != null) {
-                                        Log.e("Registration Error", exception.toString())
-                                    }
-                                    Toast.makeText(requireContext(), "Authentication failed.", Toast.LENGTH_SHORT).show()
-                                }
+                                setVisibility(View.VISIBLE)
+                                Toast.makeText(requireContext(), "Registration failed. Please try again.", Toast.LENGTH_SHORT).show()
                             }
+                        }
                     }
                 }
             }
         }
     }
-    private fun isUsernameTaken(username: String, callback: (Boolean) -> Unit) {
-        val db = FirebaseFirestore.getInstance()
-
-        db.collection("Users")
-            .whereEqualTo("username", username)
-            .get()
-            .addOnSuccessListener { documents ->
-                callback(!documents.isEmpty) // Pass true if documents exist, indicating username is taken
-            }
-            .addOnFailureListener {
-                callback(false) // Pass false if there's a failure
-            }
+    private fun setVisibility(visibility:Int){
+        binding.email.visibility = visibility
+        binding.username.visibility = visibility
+        binding.password.visibility = visibility
+        binding.confirmPassword.visibility = visibility
+        binding.firstName.visibility = visibility
+        binding.lastName.visibility = visibility
+        binding.phoneNumber.visibility = visibility
+        binding.addAPhoto.visibility = visibility
+        binding.btnRegister.visibility = visibility
     }
 }

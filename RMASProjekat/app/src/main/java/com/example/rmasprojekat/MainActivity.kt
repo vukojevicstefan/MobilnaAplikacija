@@ -1,12 +1,17 @@
+@file:Suppress("DEPRECATION")
+
 package com.example.rmasprojekat
 
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
-import com.example.rmasprojekat.fragments.LocationFragment
+import com.example.rmasprojekat.viewmodels.CurrentUserViewModel
+import com.example.rmasprojekat.viewmodels.FilteredMarkersViewModel
+import com.example.rmasprojekat.viewmodels.MarkersViewModel
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.auth.FirebaseAuth
 
@@ -16,6 +21,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var bottomNavigationView: BottomNavigationView
     private lateinit var auth: FirebaseAuth
     private lateinit var authStateListener: FirebaseAuth.AuthStateListener
+    val userViewModel: CurrentUserViewModel by viewModels()
+    val markersViewModel: MarkersViewModel by viewModels()
+    val filteredMarkersViewModel: FilteredMarkersViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,19 +34,26 @@ class MainActivity : AppCompatActivity() {
         authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
             val user = firebaseAuth.currentUser
             bottomNavigationView = findViewById(R.id.bottom_navigation)
-            hideBottomNavigationView()
             if (user == null) {
                 navController.navigate(R.id.loginFragment)
+                bottomNavigationView.visibility = View.GONE
             } else {
                 navController.addOnDestinationChangedListener { _, destination, _ ->
-                    // Check the ID of the current destination fragment
+                    invalidateOptionsMenu()
                     when (destination.id) {
                         R.id.locationFragment -> {
-                            // Hide the BottomNavigationView when LocationFragment is displayed
+                            bottomNavigationView.visibility = View.GONE
+                        }
+                        R.id.cameraFragment->{
+                            bottomNavigationView.visibility = View.GONE
+                        }
+                        R.id.loginFragment->{
+                            bottomNavigationView.visibility = View.GONE
+                        }
+                        R.id.registerFragment->{
                             bottomNavigationView.visibility = View.GONE
                         }
                         else -> {
-                            // Show the BottomNavigationView for other fragments
                             bottomNavigationView.visibility = View.VISIBLE
                         }
                     }
@@ -66,13 +81,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-    private fun hideBottomNavigationView() {
-        bottomNavigationView.visibility = View.GONE
-    }
-
-    private fun showBottomNavigationView() {
-        bottomNavigationView.visibility = View.VISIBLE
-    }
     override fun onStart() {
         super.onStart()
         auth.addAuthStateListener(authStateListener)
@@ -85,7 +93,6 @@ class MainActivity : AppCompatActivity() {
         menuInflater.inflate(R.menu.logout_menu, menu)
         return true
     }
-
     override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
         val navController = findNavController(R.id.nav_host_fragment)
         val currentFragment = navController.currentDestination?.id
@@ -102,6 +109,7 @@ class MainActivity : AppCompatActivity() {
         val navController = findNavController(R.id.nav_host_fragment)
         return if (id == R.id.action_logout) {
             auth.signOut()
+            item.isVisible=false
             navController.navigate(R.id.loginFragment)
             true
         } else super.onOptionsItemSelected(item)
