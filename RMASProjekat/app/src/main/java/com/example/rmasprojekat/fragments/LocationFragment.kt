@@ -21,12 +21,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.rmasprojekat.MainActivity
 import com.example.rmasprojekat.R
 import com.example.rmasprojekat.adapters.ImagesAdapter
 import com.example.rmasprojekat.adapters.ReviewsAdapter
 import com.example.rmasprojekat.data.LocationData
 import com.example.rmasprojekat.data.Review
 import com.example.rmasprojekat.databinding.FragmentLocationBinding
+import com.example.rmasprojekat.viewmodels.LocationViewModel
+import com.example.rmasprojekat.viewmodels.MapViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
@@ -50,6 +53,9 @@ class LocationFragment : Fragment() {
 
     private lateinit var binding: FragmentLocationBinding
 
+    private lateinit var viewModel: LocationViewModel
+    private lateinit var currentLocation:LocationData
+
     @SuppressLint("SetTextI18n")
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -72,27 +78,17 @@ class LocationFragment : Fragment() {
         recyclerView = view.findViewById(R.id.reviewsRecyclerView)
         imagesRecyclerView = view.findViewById(R.id.imagesRecyclerView)
 
+        val activity = requireActivity() as MainActivity
+        viewModel = LocationViewModel(activity.userViewModel)
         val locationId = arguments?.getString("clickedLocationId")
         if (locationId != null) {
-
-        val db = Firebase.firestore
-        val locationRef = db.collection("Markers").document(locationId)
-        locationRef.get()
-            .addOnSuccessListener { documentSnapshot ->
-                if (documentSnapshot.exists()) {
-                    val locationData = documentSnapshot.toObject(LocationData::class.java)
-                    if (locationData != null) {
-                        updateUI(locationData)
-                    }else{
-                        Log.e("MyApp", "Error getting location data: Location is null")
-                    }
+            viewModel.getLocationFromId(locationId){
+                if (it != null) {
+                    currentLocation=it
+                    updateUI(it)
                 }
             }
-            .addOnFailureListener { e ->
-                Log.e("MyApp", "Error getting location data: $e")
-            }
         }
-
     }
     private fun updateUI(location:LocationData) {
         tvLocationName.text = location.name
@@ -106,24 +102,12 @@ class LocationFragment : Fragment() {
         reviewsAdapter = ReviewsAdapter(location.reviews)
         recyclerView.adapter = reviewsAdapter
 
-        // Fetch reviews from Firestore
-        val db = Firebase.firestore
-        val reviewsCollection =
-            db.collection("Markers").document(location.id).collection("reviews")
-        reviewsCollection.get()
-            .addOnSuccessListener { documents ->
-                val reviewsList = mutableListOf<Review>()
-                for (document in documents) {
-                    val review = document.toObject(Review::class.java)
-                    reviewsList.add(review)
-                }
-                location.reviews = reviewsList // Update clickedLocation's reviews
+        viewModel.getReviews(location.id){
+            if (it != null) {
+                location.reviews = it.toMutableList()
                 reviewsAdapter.updateReviews(location.reviews) // Update adapter
-            }
-            .addOnFailureListener {
-                Log.e("MyApp", "Error fetching reviews: ${it.message}")
-            }
-
+            } // Update clickedLocation's reviews
+        }
         calculateAvgRating(location)
         btnAddReview.setOnClickListener {
             addReview(location)
@@ -138,9 +122,7 @@ class LocationFragment : Fragment() {
         }
     }
     private fun addReview(clickedLocation: LocationData) {
-        checkIfUserAlreadyHasReview(clickedLocation.reviews.toList()){hasReview->
-          if(!hasReview) {
-          val db = Firebase.firestore
+          if(viewModel.checkIfUserAlreadyHasReview(clickedLocation.reviews.toList())) {
           val inflater = layoutInflater
           val dialogView = inflater.inflate(R.layout.layout_marker_details, null)
 
@@ -152,7 +134,6 @@ class LocationFragment : Fragment() {
 
           // Set initial values for views based on clickedLocation
           tvMarkerTitle.text = clickedLocation.name
-          ratingBar.rating = clickedLocation.avgRating.toFloat()
 
           // Create a dialog
           val dialogBuilder = AlertDialog.Builder(requireContext())
@@ -160,65 +141,17 @@ class LocationFragment : Fragment() {
           val dialog = dialogBuilder.create()
           dialog.show()
 
-
-          // Handle the submit button click
           btnSubmit.setOnClickListener {
               btnSubmit.visibility=View.GONE
-              returnUserName { username ->
-                  var newReview = Review(
-                      id = "",
-                      user = username,
-                      rating = ratingBar.rating.toInt(),
-                      text = etComment.text.toString(),
-                      likes = 0,
-                      markerId = clickedLocation.id
-                  )
-
-                  val locationRef = db.collection("Markers").document(clickedLocation.id)
-                  val reviewsCollection = locationRef.collection("reviews")
-
-
-                  reviewsCollection.add(newReview)
-                      .addOnSuccessListener { documentReference ->
-
-                          updateMarkerRating(clickedLocation, newReview.rating)
-                          val revC = hashMapOf(
-                              "reviewCount" to clickedLocation.reviewCount
-                          )
-                          db.collection("Markers").document(clickedLocation.id)
-                              .set(revC, SetOptions.merge())
-
-                          //Giving documentId to id property of reviews subcollection
-                          val data = hashMapOf("id" to documentReference.id)
-
-                          db.collection("Markers").document(clickedLocation.id)
-                              .collection("reviews").document(documentReference.id)
-                              .set(data, SetOptions.merge())
-
-                          newReview.id = documentReference.id
-                          clickedLocation.reviews.add(newReview)
-                          returnUserName {
-                              addToAuthorScore(clickedLocation.author)
-                          }
-                          // Update the RecyclerView's dataset and refresh it
-                          reviewsAdapter.updateReviews(clickedLocation.reviews)
-                          updateUI(clickedLocation)
-                          // Close the dialog
-                          dialog.dismiss()
-                      }
-                      .addOnFailureListener {
-                          Toast.makeText(
-                              requireContext(),
-                              "Error occurred saving your review, please try again!",
-                              Toast.LENGTH_SHORT
-                          ).show()
-                      }
-              }
+              viewModel.addReview(ratingBar.rating.toInt(),etComment.text.toString(),currentLocation.id, requireContext())
+              updateMarkerRating(currentLocation, ratingBar.rating.toInt())
+              reviewsAdapter.updateReviews(currentLocation.reviews)
+              updateUI(currentLocation)
+              dialog.dismiss()
           }
           }else{
               Toast.makeText(requireContext(),"You already uploaded a review!",Toast.LENGTH_SHORT).show()
           }
-        }
     }
     private fun updateMarkerRating(location:LocationData, newRating:Int){
         location.reviewCount++
@@ -230,63 +163,8 @@ class LocationFragment : Fragment() {
         location.avgRating=decimalFormat.format(sumOfRatings/location.reviewCount.toDouble()).toDouble()
         tvAvgRating.text = "Rating ${location.avgRating}"
     }
-    private fun returnUserName(callback: (String) -> Unit) {
-        val user = FirebaseAuth.getInstance().currentUser
-        val db = FirebaseFirestore.getInstance()
 
-        if (user != null) {
-            db.collection("Users")
-                .whereEqualTo("email", user.email)
-                .get()
-                .addOnSuccessListener { documents ->
-                    for (document in documents) {
-                        val u = document.getString("username")
-                        if (u != null) {
-                            callback(u)
-                            return@addOnSuccessListener
-                        }
-                    }
-                    callback("Unknown User")
-                }
-                .addOnFailureListener {
-                    callback("Unknown User")
-                }
-        } else {
-            callback("Unknown User")
-        }
-    }
-    private fun addToAuthorScore(authorUsername: String) {
-        val db = Firebase.firestore
-        val usersCollectionRef = db.collection("Users")
 
-        // Query the Users collection to find the user with the matching username
-        usersCollectionRef.whereEqualTo("username", authorUsername)
-            .get()
-            .addOnSuccessListener { querySnapshot ->
-                for (documentSnapshot in querySnapshot) {
-                    val userRef = usersCollectionRef.document(documentSnapshot.id)
-                    userRef.get().addOnSuccessListener { innerDocumentSnapshot ->
-                        if (innerDocumentSnapshot.exists()) {
-                            var score = innerDocumentSnapshot.getLong("score") ?: 0
-                            userRef.update("score", ++score)
-                        }
-                    }
-                }
-            }
-    }
-    private fun checkIfUserAlreadyHasReview(reviews: List<Review>, callback: (Boolean) -> Unit) :Boolean{
-        returnUserName { username ->
-            for (review in reviews) {
-                if (review.user == username) {
-                    // User already has a review
-                    callback(true)
-                    return@returnUserName
-                }
-            }
-            callback(false)
-        }
-        return false
-    }
     private fun displayImages(imageUrls: List<String>) {
         imagesRecyclerView.layoutManager =
             LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
@@ -320,7 +198,7 @@ class LocationFragment : Fragment() {
                                     markerRef.update("photos", photos)
                                         .addOnSuccessListener {
                                             Log.d("MyApp", "Document updated with photo URL.")
-                                            addToAuthorScore(LOC.author)
+                                            viewModel.addToAuthorScore(LOC.author)
                                             displayImages(photos)
                                         }
                                         .addOnFailureListener { e ->

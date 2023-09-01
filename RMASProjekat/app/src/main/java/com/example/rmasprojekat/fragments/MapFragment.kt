@@ -168,6 +168,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         }
     }
     private fun showFilterDialog(currentLoc:LatLng) {
+        savedMarkers=viewModel.getMarkers().toMutableList()
         showSavedMarkersOnMap()
         val dialogView = layoutInflater.inflate(R.layout.filter_dialog, null)
         val authorEditText = dialogView.findViewById<EditText>(R.id.filter_marker_author_edittext)
