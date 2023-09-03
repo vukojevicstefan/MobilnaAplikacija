@@ -32,23 +32,31 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.pow
 
-class MapViewModel(private val currentUserViewModel: CurrentUserViewModel, private val markersViewModel: MarkersViewModel, private val filteredMarkersViewModel:FilteredMarkersViewModel) : ViewModel() {
+class MapViewModel(
+    private val currentUserViewModel: CurrentUserViewModel,
+    private val markersViewModel: MarkersViewModel,
+    private val filteredMarkersViewModel: FilteredMarkersViewModel
+) : ViewModel() {
+    // Constants
     private val LOCATION_PERMISSION_REQUEST_CODE = 1
 
+    // Function to create a new waypoint (location marker)
     fun newWaypoint(context: Context, activity: Activity) {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        ) {
+        // Check for location permission
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
             fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                 if (location != null) {
-                    val dialogView = LayoutInflater.from(context)
-                        .inflate(R.layout.marker_dialog, null)
+                    // Create a dialog for adding a new marker
+                    val dialogView = LayoutInflater.from(context).inflate(R.layout.marker_dialog, null)
                     val nameEditText = dialogView.findViewById<EditText>(R.id.marker_name_edittext)
                     val typeSpinner = dialogView.findViewById<Spinner>(R.id.marker_type_spinner)
 
-                    val markerTypes = arrayOf("Restaurant", "Coffee Shop", "Fast Food", "Hotel", "Park", "Gas Station", "Other")
-                    val typeAdapter =
-                        ArrayAdapter(context, R.layout.spinner_dropdown_item, markerTypes)
+                    // Define marker types
+                    val markerTypes = arrayOf(
+                        "Restaurant", "Coffee Shop", "Fast Food", "Hotel", "Park", "Gas Station", "Other"
+                    )
+                    val typeAdapter = ArrayAdapter(context, R.layout.spinner_dropdown_item, markerTypes)
                     typeAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
                     typeSpinner.adapter = typeAdapter
 
@@ -56,73 +64,89 @@ class MapViewModel(private val currentUserViewModel: CurrentUserViewModel, priva
                         .setTitle("Add Marker")
                         .setView(dialogView)
                         .setPositiveButton("Add") { _, _ ->
-                            val name = nameEditText.text.toString()
+                            val name = nameEditText.text.toString().trim()
                             val type = markerTypes[typeSpinner.selectedItemPosition]
 
-                            val address = getAddressFromLocation(location, context).toString()
+                            // Check if the name is empty
+                            if (name.isNotEmpty()) {
+                                val address = getAddressFromLocation(location, context).toString()
+                                val currentTime = Timestamp.now()
+                                val user = currentUserViewModel.currentUser.value?.username
 
-                            val currentTime = Timestamp.now()
-                            val user = currentUserViewModel.currentUser.value?.username
-                            if (user != null) {
-                                 if (user.isNotEmpty()) {
-                                    val markerDetails = LocationData(id = "", name = name, latitude = location.latitude, longitude = location.longitude, address = address, type = type, photos = mutableListOf(), reviews = mutableListOf(), avgRating = 0.0, reviewCount = 0, timeCreated = currentTime, author = user
+                                if (user != null && user.isNotEmpty()) {
+                                    val markerDetails = LocationData(
+                                        id = "",
+                                        name = name,
+                                        latitude = location.latitude,
+                                        longitude = location.longitude,
+                                        address = address,
+                                        type = type,
+                                        photos = mutableListOf(),
+                                        reviews = mutableListOf(),
+                                        avgRating = 0.0,
+                                        reviewCount = 0,
+                                        timeCreated = currentTime,
+                                        author = user
                                     )
+
                                     val db = FirebaseFirestore.getInstance()
                                     val collectionRef = db.collection("Markers")
-                                    // Add the marker details to Firestore and get the generated document reference
+
+                                    // Add the marker details to Firestore and update the UI
                                     collectionRef.add(markerDetails)
                                         .addOnSuccessListener { documentReference ->
-                                            // Handle success
                                             val data = hashMapOf("id" to documentReference.id)
                                             markerDetails.id = documentReference.id
                                             db.collection("Markers").document(documentReference.id)
                                                 .set(data, SetOptions.merge())
                                                 .addOnSuccessListener {
-                                                    // Handle success
+                                                    // Update the list of markers in the UI
                                                     readMarkersList(context)
-                                                    Toast.makeText(context, "Marker added.", Toast.LENGTH_SHORT).show()
+                                                    Toast.makeText(context, "Marker added.", Toast.LENGTH_SHORT)
+                                                        .show()
                                                 }
                                                 .addOnFailureListener { e ->
-                                                    // Handle Firestore write failure
-                                                    Toast.makeText(context, "Failed to add marker: ${e.message}", Toast.LENGTH_SHORT).show()
+                                                    Toast.makeText(context, "Failed to add marker: ${e.message}", Toast.LENGTH_SHORT)
+                                                        .show()
                                                 }
                                         }
                                         .addOnFailureListener { e ->
-                                            // Handle Firestore add failure
-                                            Toast.makeText(context, "Failed to add marker: ${e.message}", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, "Failed to add marker: ${e.message}", Toast.LENGTH_SHORT)
+                                                .show()
                                         }
                                 } else {
-                                    // Handle the case where userId is empty
                                     Toast.makeText(context, "User ID is empty.", Toast.LENGTH_SHORT).show()
                                 }
+                            } else {
+                                Toast.makeText(context, "Marker name can't be empty.", Toast.LENGTH_SHORT).show()
                             }
-                            }
+                        }
                         .setNegativeButton("Cancel", null)
                         .show()
                 } else {
-                    // Handle the case where location is null
-                    Toast.makeText(
-                        context,
-                        "Location not available.",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(context, "Location not available.", Toast.LENGTH_SHORT).show()
                 }
             }
         } else {
+            // Request location permission
             ActivityCompat.requestPermissions(
                 activity,
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
                 LOCATION_PERMISSION_REQUEST_CODE
             )
         }
-    }//End of newWaypoint()
+    }
+
+    // Function to get the address from a location
     private fun getAddressFromLocation(location: Location, context: Context): String? {
         val geocoder = Geocoder(context)
         val addresses: List<Address>? =
             geocoder.getFromLocation(location.latitude, location.longitude, 1)
         return addresses?.get(0)?.getAddressLine(0)
     }
-    fun readMarkersList(context:Context) {
+
+    // Function to read the list of markers from Firestore and update the ViewModel
+    fun readMarkersList(context: Context) {
         val db = FirebaseFirestore.getInstance()
         val collectionRef = db.collection("Markers")
         collectionRef.get()
@@ -138,9 +162,13 @@ class MapViewModel(private val currentUserViewModel: CurrentUserViewModel, priva
                 Toast.makeText(context, "Error getting data.", Toast.LENGTH_SHORT).show()
             }
     }
-    fun getMarkers(): List<LocationData> {
+
+    // Function to get the list of markers from the ViewModel
+    fun getMarkers(): List<LocationData>? {
         return markersViewModel.getMarkers()
     }
+
+    // Function to apply filters to the list of markers
     fun applyFilters(
         filterAuthor: String,
         filterType: String,
@@ -148,7 +176,7 @@ class MapViewModel(private val currentUserViewModel: CurrentUserViewModel, priva
         selectedRadius: Int,
         currentLoc: LatLng
     ) {
-        val filteredList = getMarkers().filter { location ->
+        val filteredList = getMarkers()!!.filter { location ->
             var authorMatch = location.author.contains(filterAuthor, ignoreCase = true)
             var typeMatch = location.type.contains(filterType, ignoreCase = true)
             val dateMatch =
@@ -170,9 +198,11 @@ class MapViewModel(private val currentUserViewModel: CurrentUserViewModel, priva
         }
         filteredMarkersViewModel.setMarkers(filteredList)
     }
+
+    // Function to check if a location's creation date is within a specified date range
     private fun isDateInRange(locationDate: Date, filterDate: String): Boolean {
         val dateFormat = SimpleDateFormat("MMM d, yyyy", Locale.US)
-        val filterDateParts = filterDate.split(" - ") // Split the date range string
+        val filterDateParts = filterDate.split(" - ")
 
         try {
             if (filterDateParts.size == 2) {
@@ -180,14 +210,16 @@ class MapViewModel(private val currentUserViewModel: CurrentUserViewModel, priva
                 val endDate = dateFormat.parse(filterDateParts[1])
 
                 if (startDate != null && endDate != null) {
-                    return locationDate>=startDate && locationDate<=endDate
+                    return locationDate >= startDate && locationDate <= endDate
                 }
             }
         } catch (e: ParseException) {
-            Log.d("ParseException",e.message.toString())
+            Log.d("ParseException", e.message.toString())
         }
         return false
     }
+
+    // Function to calculate the distance between two geographic coordinates
     private fun calculateDistance(
         lat1: Double, lon1: Double,
         lat2: Double, lon2: Double
@@ -199,15 +231,16 @@ class MapViewModel(private val currentUserViewModel: CurrentUserViewModel, priva
         val lat2Rad = Math.toRadians(lat2)
         val lon2Rad = Math.toRadians(lon2)
 
-        // Haversine formula
+        // Haversine formula to calculate the distance
         val dLat = lat2Rad - lat1Rad
         val dLon = lon2Rad - lon1Rad
-        val a = Math.sin(dLat / 2)
-            .pow(2) + Math.cos(lat1Rad) * Math.cos(lat2Rad) * Math.sin(dLon / 2).pow(2)
+        val a = Math.sin(dLat / 2).pow(2) + Math.cos(lat1Rad) * Math.cos(lat2Rad) * Math.sin(dLon / 2).pow(2)
         val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
         return radiusOfEarth * c
     }
+
+    // Function to get the filtered list of markers
     fun getFilteredMarkers(): List<LocationData> {
-        return filteredMarkersViewModel.getMarkers()
+        return filteredMarkersViewModel.getMarkers()!!
     }
 }

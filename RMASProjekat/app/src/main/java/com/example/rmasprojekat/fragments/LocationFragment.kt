@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.example.rmasprojekat.fragments
 
 import android.annotation.SuppressLint
@@ -39,6 +41,7 @@ import com.google.firebase.storage.FirebaseStorage
 import java.text.DecimalFormat
 
 class LocationFragment : Fragment() {
+    // Declare UI elements
     private lateinit var tvLocationName: TextView
     private lateinit var tvLocationType: TextView
     private lateinit var tvLocationAddress: TextView
@@ -46,21 +49,22 @@ class LocationFragment : Fragment() {
     private lateinit var btnAddReview: ImageView
     private lateinit var btnAddPhoto: ImageView
     private lateinit var recyclerView: RecyclerView
-    private lateinit var LOC: LocationData
     private val PICK_IMAGE_REQUEST = 1
     private lateinit var reviewsAdapter: ReviewsAdapter
     private lateinit var imagesRecyclerView: RecyclerView
 
+    // Data binding for this fragment
     private lateinit var binding: FragmentLocationBinding
 
+    // ViewModel for handling location-related data and actions
     private lateinit var viewModel: LocationViewModel
-    private lateinit var currentLocation:LocationData
 
     @SuppressLint("SetTextI18n")
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        // Inflate the layout for this fragment using data binding
         binding = FragmentLocationBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -68,7 +72,7 @@ class LocationFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Initialize views
+        // Initialize UI elements
         tvLocationName = view.findViewById(R.id.tvLocationName)
         tvLocationType = view.findViewById(R.id.tvLocationType)
         tvLocationAddress = view.findViewById(R.id.tvLocationAddress)
@@ -78,102 +82,113 @@ class LocationFragment : Fragment() {
         recyclerView = view.findViewById(R.id.reviewsRecyclerView)
         imagesRecyclerView = view.findViewById(R.id.imagesRecyclerView)
 
+        // Get a reference to the parent activity and set up the ViewModel
         val activity = requireActivity() as MainActivity
         viewModel = LocationViewModel(activity.userViewModel)
+
+        // Retrieve the location ID from the fragment arguments and load location data
         val locationId = arguments?.getString("clickedLocationId")
         if (locationId != null) {
-            viewModel.getLocationFromId(locationId){
-                if (it != null) {
-                    currentLocation=it
-                    updateUI(it)
-                }
+            viewModel.getLocationFromId(locationId) {
+                if (it == true)
+                    observeLocationData()
+                else
+                    Toast.makeText(requireContext(), "Error getting data", Toast.LENGTH_SHORT).show()
             }
         }
     }
-    private fun updateUI(location:LocationData) {
-        tvLocationName.text = location.name
-        tvLocationType.text = location.type
-        tvLocationAddress.text = location.address
-        tvAvgRating.text = "Rating ${location.avgRating}"
-        (requireActivity() as AppCompatActivity).supportActionBar?.title = location.name
 
-        // Initialize RecyclerView and its adapter
+    // Update the UI with location data
+    private fun updateUI(locationData: LocationData) {
+        tvLocationName.text = locationData.name
+        tvLocationType.text = locationData.type
+        tvLocationAddress.text = locationData.address
+        tvAvgRating.text = "Rating ${locationData.avgRating}"
+        (requireActivity() as AppCompatActivity).supportActionBar?.title = locationData.name
+
+        // Initialize RecyclerView and its adapter for displaying reviews
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
-        reviewsAdapter = ReviewsAdapter(location.reviews)
+        val sortedReviews = locationData.reviews.sortedByDescending { it.rating }
+        val activity = requireActivity() as MainActivity
+        reviewsAdapter = ReviewsAdapter(sortedReviews.toMutableList(), activity.userViewModel)
         recyclerView.adapter = reviewsAdapter
 
-        viewModel.getReviews(location.id){
-            if (it != null) {
-                location.reviews = it.toMutableList()
-                reviewsAdapter.updateReviews(location.reviews) // Update adapter
-            } // Update clickedLocation's reviews
-        }
-        calculateAvgRating(location)
+        // Set up a click listener for adding a review
         btnAddReview.setOnClickListener {
-            addReview(location)
+            addReview()
         }
 
-        LOC = location
-        displayImages(location.photos)
+        // Display images related to the location
+        displayImages(locationData.photos)
+
+        // Set up a click listener for adding a photo
         btnAddPhoto.setOnClickListener {
             val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
             startActivityForResult(intent, PICK_IMAGE_REQUEST)
-            displayImages(location.photos)
+            // Refresh images after selecting a new one
+            displayImages(locationData.photos)
         }
     }
-    private fun addReview(clickedLocation: LocationData) {
-          if(viewModel.checkIfUserAlreadyHasReview(clickedLocation.reviews.toList())) {
-          val inflater = layoutInflater
-          val dialogView = inflater.inflate(R.layout.layout_marker_details, null)
 
-          // Initialize views in the dialog view
-          val tvMarkerTitle = dialogView.findViewById<TextView>(R.id.tv_marker_title)
-          val ratingBar = dialogView.findViewById<RatingBar>(R.id.rating_bar)
-          val etComment = dialogView.findViewById<EditText>(R.id.et_comment)
-          val btnSubmit = dialogView.findViewById<Button>(R.id.btn_submit)
-
-          // Set initial values for views based on clickedLocation
-          tvMarkerTitle.text = clickedLocation.name
-
-          // Create a dialog
-          val dialogBuilder = AlertDialog.Builder(requireContext())
-          dialogBuilder.setView(dialogView)
-          val dialog = dialogBuilder.create()
-          dialog.show()
-
-          btnSubmit.setOnClickListener {
-              btnSubmit.visibility=View.GONE
-              viewModel.addReview(ratingBar.rating.toInt(),etComment.text.toString(),currentLocation.id, requireContext())
-              updateMarkerRating(currentLocation, ratingBar.rating.toInt())
-              reviewsAdapter.updateReviews(currentLocation.reviews)
-              updateUI(currentLocation)
-              dialog.dismiss()
-          }
-          }else{
-              Toast.makeText(requireContext(),"You already uploaded a review!",Toast.LENGTH_SHORT).show()
-          }
-    }
-    private fun updateMarkerRating(location:LocationData, newRating:Int){
-        location.reviewCount++
-        var sumOfRatings:Double=newRating.toDouble()
-        for(review in location.reviews){
-            sumOfRatings+=review.rating
+    // Observe changes in location data using ViewModel
+    private fun observeLocationData() {
+        viewModel.currentLocation.observe(viewLifecycleOwner) { locationData ->
+            updateUI(locationData)
         }
-        val decimalFormat= DecimalFormat("#.00")
-        location.avgRating=decimalFormat.format(sumOfRatings/location.reviewCount.toDouble()).toDouble()
-        tvAvgRating.text = "Rating ${location.avgRating}"
     }
 
+    // Allow the user to add a review for the location
+    private fun addReview() {
+        val currentLocation = viewModel.currentLocation.value
+        if (currentLocation != null && !viewModel.checkIfUserAlreadyHasReview(currentLocation.reviews.toList())) {
+            val inflater = layoutInflater
+            val dialogView = inflater.inflate(R.layout.layout_marker_details, null)
 
+            // Initialize views in the review dialog
+            val tvMarkerTitle = dialogView.findViewById<TextView>(R.id.tv_marker_title)
+            val ratingBar = dialogView.findViewById<RatingBar>(R.id.rating_bar)
+            val etComment = dialogView.findViewById<EditText>(R.id.et_comment)
+            val btnSubmit = dialogView.findViewById<Button>(R.id.btn_submit)
+
+            // Set the title of the review dialog based on the current location
+            tvMarkerTitle.text = currentLocation.name
+
+            // Create an AlertDialog for adding a review
+            val dialogBuilder = AlertDialog.Builder(requireContext())
+            dialogBuilder.setView(dialogView)
+            val dialog = dialogBuilder.create()
+            dialog.show()
+
+            // Set up a click listener for the review submission
+            btnSubmit.setOnClickListener {
+                btnSubmit.visibility = View.GONE
+                viewModel.addReview(
+                    ratingBar.rating.toInt(),
+                    etComment.text.toString(),
+                    currentLocation.id,
+                    requireContext()
+                )
+                // Update the UI with the new review and dismiss the dialog
+                observeLocationData()
+                dialog.dismiss()
+            }
+        } else {
+            Toast.makeText(requireContext(), "You already uploaded a review!", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // Display images related to the location in a horizontal RecyclerView
     private fun displayImages(imageUrls: List<String>) {
         imagesRecyclerView.layoutManager =
             LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         val imagesAdapter = ImagesAdapter(imageUrls)
         imagesRecyclerView.adapter = imagesAdapter
     }
+    @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         val storage = FirebaseStorage.getInstance()
+        val currentLocationId = viewModel.currentLocation.value?.id
 
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK && data != null) {
             val selectedImageUri: Uri? = data.data
@@ -183,13 +198,14 @@ class LocationFragment : Fragment() {
                 val imagesRef = storageRef.child("photos/${selectedImageUri.lastPathSegment}")
                 val uploadTask = imagesRef.putFile(selectedImageUri)
                 Log.d("MyApp", imagesRef.path)
+
                 uploadTask.addOnSuccessListener { taskSnapshot ->
                     // Get the download URL of the uploaded image
                     imagesRef.downloadUrl.addOnSuccessListener { downloadUri ->
                         // Update the Firestore document with the image URL
                         val db = FirebaseFirestore.getInstance()
-                        val markerRef = db.collection("Markers").document(LOC.id)
-                        Log.d("MyApp",markerRef.id)
+                        val markerRef = db.collection("Markers").document(currentLocationId!!)
+                        Log.d("MyApp", markerRef.id)
                         markerRef.get()
                             .addOnSuccessListener { documentSnapshot ->
                                 val photos = documentSnapshot.get("photos") as? MutableList<String>
@@ -198,8 +214,7 @@ class LocationFragment : Fragment() {
                                     markerRef.update("photos", photos)
                                         .addOnSuccessListener {
                                             Log.d("MyApp", "Document updated with photo URL.")
-                                            viewModel.addToAuthorScore(LOC.author)
-                                            displayImages(photos)
+                                            viewModel.addToAuthorScore()
                                         }
                                         .addOnFailureListener { e ->
                                             Log.e("MyApp", "Error updating document with photo URL: $e")
@@ -213,38 +228,7 @@ class LocationFragment : Fragment() {
                 }.addOnFailureListener { exception ->
                     Log.e("MyApp", "Error uploading image: $exception")
                 }
-
             }
         }
-    }
-    private fun calculateAvgRating(location: LocationData) {
-        val reviews = location.reviews
-
-        if (reviews.isEmpty() || location.reviewCount==0) {
-            location.avgRating = 0.0
-            return
-        }
-
-        var totalRating = 0.0
-
-        for (review in reviews) {
-            totalRating += review.rating
-        }
-        val avgRating = totalRating / reviews.size
-        location.avgRating = avgRating
-        updateAvgRatingInFirestore(location)
-    }
-    private fun updateAvgRatingInFirestore(location: LocationData) {
-        val db = FirebaseFirestore.getInstance()
-        val collectionRef = db.collection("Markers")
-        val documentRef = collectionRef.document(location.id)
-
-        val data = hashMapOf("avgRating" to location.avgRating)
-
-        documentRef
-            .set(data, SetOptions.merge())
-            .addOnFailureListener { e ->
-                Log.e("Update Avg Rating", "Error updating avgRating: ${e.message}")
-            }
     }
 }

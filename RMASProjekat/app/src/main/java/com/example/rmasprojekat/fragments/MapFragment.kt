@@ -33,6 +33,7 @@ import java.util.Date
 
 class MapFragment : Fragment(), OnMapReadyCallback {
 
+    // Constants and variables
     private val LOCATION_PERMISSION_REQUEST_CODE = 1
     private lateinit var binding: FragmentMapBinding
     private lateinit var gMap: GoogleMap
@@ -53,8 +54,10 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Set the title of the activity's action bar
         (requireActivity() as AppCompatActivity).supportActionBar?.title = "Map"
 
+        // Initialize ViewModel and other UI components
         val activity = requireActivity() as MainActivity
         viewModel = MapViewModel(activity.userViewModel, activity.markersViewModel, activity.filteredMarkersViewModel)
         addMarker = view.findViewById(R.id.addMarker)
@@ -62,23 +65,30 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         auth = FirebaseAuth.getInstance()
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
 
+        // Asynchronously load the map
         mapFragment.getMapAsync(this)
 
+        // Read markers data from ViewModel
         viewModel.readMarkersList(requireContext())
-        savedMarkers = viewModel.getMarkers().toMutableList()
-        addMarker.setOnClickListener {
-            viewModel.newWaypoint(requireContext(),requireActivity())
 
-            savedMarkers = viewModel.getMarkers().toMutableList()
+        // Observe changes in markers data and update the map accordingly
+        activity.markersViewModel.markers.observe(viewLifecycleOwner) { markers ->
+            savedMarkers = markers.toMutableList()
+            showSavedMarkersOnMap()
+        }
+        addMarker.setOnClickListener {
+            // Add a new waypoint and update the saved markers
+            viewModel.newWaypoint(requireContext(), requireActivity())
+            savedMarkers = viewModel.getMarkers()?.toMutableList() ?: mutableListOf()
             showSavedMarkersOnMap()
         }
         btnFilter.setOnClickListener {
+            // Show a filter dialog to filter markers based on user preferences
             currentLocation {
                 if (it != null) {
                     showFilterDialog(it)
-                }
-                else{
-                    Toast.makeText(requireContext(),"Error getting your location",Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(requireContext(), "Error getting your location", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -90,11 +100,13 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         showSavedMarkersOnMap()
     }
     private fun showUserLocation() {
+        // Check if the app has permission to access the user's location
         if (ContextCompat.checkSelfPermission(
                 requireContext(),
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
+            // Enable displaying the user's location on the map
             gMap.isMyLocationEnabled = true
             val fusedLocationClient =
                 LocationServices.getFusedLocationProviderClient(requireContext())
@@ -102,6 +114,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                 requireActivity()
             ) { location ->
                 if (location != null) {
+                    // Get the user's current location and move the camera to that location
                     val latitude = location.latitude
                     val longitude = location.longitude
                     val userLocation = LatLng(latitude, longitude)
@@ -109,6 +122,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                 }
             }
         } else {
+            // Request location permission if not granted
             ActivityCompat.requestPermissions(
                 requireActivity(),
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
@@ -122,8 +136,10 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
+            // If location permission is granted, show user's location
             showUserLocation()
         } else {
+            // Request location permission if not granted
             ActivityCompat.requestPermissions(
                 requireActivity(),
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
@@ -131,6 +147,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
             )
         }
     }
+    @Deprecated("Deprecated in Java")
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
@@ -139,15 +156,20 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // If location permission is granted, show user's location
                 showUserLocation()
             }
         }
     }
     private fun showSavedMarkersOnMap() {
+        if (!::gMap.isInitialized) {
+            return
+        }
         gMap.clear()
 
         if (savedMarkers.isEmpty()) return
 
+        // Display saved markers on the map
         for (location in savedMarkers) {
             val latLng = LatLng(location.latitude, location.longitude)
             val markerTitle = location.name
@@ -156,10 +178,10 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                 marker.tag = location
             }
         }
+        // Set a click listener for map markers to navigate to location details
         gMap.setOnMarkerClickListener { marker ->
             val clickedLocation = marker.tag as? LocationData
             if (clickedLocation != null) {
-
                 val args = Bundle()
                 args.putString("clickedLocationId", clickedLocation.id)
                 findNavController().navigate(R.id.action_mapFragment_to_locationFragment, args)
@@ -168,8 +190,8 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         }
     }
     private fun showFilterDialog(currentLoc:LatLng) {
-        savedMarkers=viewModel.getMarkers().toMutableList()
-        showSavedMarkersOnMap()
+        savedMarkers= viewModel.getMarkers()?.toMutableList() ?: mutableListOf()
+        showSavedMarkersOnMap( )
         val dialogView = layoutInflater.inflate(R.layout.filter_dialog, null)
         val authorEditText = dialogView.findViewById<EditText>(R.id.filter_marker_author_edittext)
         val typeSpinner = dialogView.findViewById<Spinner>(R.id.filter_marker_type_spinner)
@@ -206,15 +228,8 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                 dateRangePicker
                     .show(requireActivity().supportFragmentManager, "tag")
             }
-        val markerTypes = arrayOf("Any Type", "Restaurant", "Coffee Shop",
-            "Fast Food",
-            "Hotel",
-            "Park",
-            "Gas Station",
-            "Other"
-        )
-        val typeAdapter =
-            ArrayAdapter(requireContext(), R.layout.spinner_dropdown_item, markerTypes)
+        val markerTypes = arrayOf("Any Type", "Restaurant", "Coffee Shop", "Fast Food", "Hotel", "Park", "Gas Station", "Other")
+        val typeAdapter = ArrayAdapter(requireContext(), R.layout.spinner_dropdown_item, markerTypes)
         typeAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
         typeSpinner.adapter = typeAdapter
 
@@ -235,12 +250,9 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         dialog.show()
     }
     private fun getDateString(start: Long, end: Long): String {
-        val startStr = DateFormat
-            .getDateInstance()
-            .format(Date(start))
-        val endStr = DateFormat
-            .getDateInstance()
-            .format(Date(end))
+        // Format a date range as a string
+        val startStr = DateFormat.getDateInstance().format(Date(start))
+        val endStr = DateFormat.getDateInstance().format(Date(end))
         return "$startStr - $endStr"
     }
     private fun currentLocation(callback: (LatLng?) -> Unit) {
@@ -249,6 +261,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
+            // Get the user's current location and pass it to the callback function
             val fusedLocationClient =
                 LocationServices.getFusedLocationProviderClient(requireContext())
 
@@ -256,17 +269,16 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                 if (location != null) {
                     val latitude = location.latitude
                     val longitude = location.longitude
-                    // Create a LatLng object and pass it to the callback
                     val currentLatLng = LatLng(latitude, longitude)
                     Log.d("Current Location", "Latitude: $latitude, Longitude: $longitude")
                     callback(currentLatLng)
                 } else {
-                    // Handle the case where location is null
                     Log.d("Current Location", "Location not available.")
                     callback(null)
                 }
             }
         } else {
+            // Request location permission if not granted and pass null to the callback
             ActivityCompat.requestPermissions(
                 requireActivity(),
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),

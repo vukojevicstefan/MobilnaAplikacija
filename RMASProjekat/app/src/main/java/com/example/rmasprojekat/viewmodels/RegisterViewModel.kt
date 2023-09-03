@@ -5,10 +5,10 @@ import com.example.rmasprojekat.data.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
-
 class RegisterViewModel(private val userViewModel: CurrentUserViewModel) : ViewModel() {
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 
+    // This function is used to create a new user with email and password.
     fun createUserWithEmailAndPassword(
         email: String,
         password: String,
@@ -22,11 +22,13 @@ class RegisterViewModel(private val userViewModel: CurrentUserViewModel) : ViewM
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
+                    // User creation was successful
                     val user = auth.currentUser
                     val uid = user?.uid ?: ""
                     val db = FirebaseFirestore.getInstance()
                     val userRef = db.collection("Users").document(uid)
 
+                    // Create a map of user details to be stored in Firestore
                     val userDetails = hashMapOf(
                         "id" to uid,
                         "email" to email,
@@ -40,19 +42,25 @@ class RegisterViewModel(private val userViewModel: CurrentUserViewModel) : ViewM
                         "photoPath" to imageUri
                     )
 
+                    // Store user details in Firestore
                     userRef.set(userDetails)
                         .addOnSuccessListener {
-                            val currentUser = User(uid, email,username,firstName,lastName,phoneNumber,0,mutableListOf<String>(),imageUri)
+                            // Successfully stored user details
+                            val currentUser = User(uid, email, username, firstName, lastName, phoneNumber, 0, mutableListOf<String>(), imageUri)
                             userViewModel.setCurrentUser(currentUser)
                             callback(true)
                         }
                         .addOnFailureListener {
+                            // Failed to store user details
                             callback(false)
                         }
-                } else
+                } else {
+                    // User creation failed
                     callback(false)
+                }
             }
     }
+    // This function checks if a username is already taken in Firestore.
     fun isUsernameTaken(username: String, callback: (Boolean) -> Unit) {
         val db = FirebaseFirestore.getInstance()
 
@@ -60,11 +68,12 @@ class RegisterViewModel(private val userViewModel: CurrentUserViewModel) : ViewM
             .whereEqualTo("username", username)
             .get()
             .addOnSuccessListener { documents ->
-                callback(!documents.isEmpty) // Pass true if documents exist, indicating username is taken
+                // Check if documents exist, indicating that the username is taken
+                callback(!documents.isEmpty)
             }
             .addOnFailureListener {
-                callback(false) // Pass false if there's a failure
+                // Pass false if there's a failure
+                callback(false)
             }
     }
 }
-

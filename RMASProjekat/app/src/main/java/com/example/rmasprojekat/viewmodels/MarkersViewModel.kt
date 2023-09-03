@@ -1,17 +1,20 @@
 package com.example.rmasprojekat.viewmodels
 
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.rmasprojekat.data.LocationData
 
 class MarkersViewModel : ViewModel() {
-    private var markers: MutableList<LocationData> = mutableListOf()
-
-    fun getMarkers(): List<LocationData> {
-        return markers
+    private val _markers = MutableLiveData<List<LocationData>>()
+    val markers: LiveData<List<LocationData>> = _markers
+    init {
+        _markers.value = emptyList()
     }
-
+    fun getMarkers(): List<LocationData>? {
+        return _markers.value
+    }
     fun setMarkers(newMarkers: List<LocationData>) {
-        markers.clear()
-        markers.addAll(newMarkers)
+        _markers.value = newMarkers
     }
 }
