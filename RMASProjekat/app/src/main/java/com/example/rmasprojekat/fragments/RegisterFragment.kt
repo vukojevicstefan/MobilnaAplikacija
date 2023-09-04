@@ -105,7 +105,6 @@ class RegisterFragment : Fragment() {
 
         // Register button click listener
         buttonReg.setOnClickListener {
-            // Hide UI components and show a progress bar while processing
             setEditTextEnabled(false)
             progressBar.visibility = View.VISIBLE
 

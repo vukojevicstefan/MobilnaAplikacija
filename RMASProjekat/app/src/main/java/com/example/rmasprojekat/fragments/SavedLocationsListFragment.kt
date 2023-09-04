@@ -67,6 +67,7 @@ class SavedLocationsListFragment : Fragment() {
 
         // Set a click listener for the filter button
         btnFilter.setOnClickListener {
+            fillList(savedMarkers)
             // Get the current location and show a filter dialog when the button is clicked
             currentLocation { currentLoc ->
                 if (currentLoc != null) {
@@ -79,7 +80,7 @@ class SavedLocationsListFragment : Fragment() {
         activity.markersViewModel.markers.observe(viewLifecycleOwner) { markers ->
             // Sort the markers by average rating in descending order
             val sortedMarkers = sortMarkers(markers)
-
+            savedMarkers = markers.toMutableList()
             // Fill the list view with the sorted markers
             fillList(sortedMarkers)
         }
@@ -93,12 +94,11 @@ class SavedLocationsListFragment : Fragment() {
     // Function to populate the list view with location data
     private fun fillList(savedMarkers: List<LocationData>) {
         val markersList: MutableList<String> = mutableListOf()
-
         // Format location data and add it to the list
         for (location in savedMarkers) {
             val dateFormat = SimpleDateFormat("MMM d, yyyy", Locale.US)
             val formattedDate = dateFormat.format(location.timeCreated.toDate())
-            markersList.add("${location.name}  Rating: ${location.avgRating}  Date: $formattedDate")
+            markersList.add("${location.name} ${location.type} ${location.author} Rating: ${location.avgRating}  Date: $formattedDate")
         }
 
         // Create an ArrayAdapter to display the list in the ListView
